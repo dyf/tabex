@@ -68,7 +68,7 @@
   function compute_interaction_quat(dx, dy) {       
     // compute axis of rotation  
     let mag = Math.sqrt(dx*dx + dy*dy);
-    let v_rot = [ -dy/mag, dx/mag, 0.0 ];
+    let v_rot = [ dy/mag, -dx/mag, 0.0 ];
     let theta =  mag / 100.0 * (Math.PI / 2.0);
     return Quaternion.fromAxisAngle(v_rot, theta);    
   }
@@ -111,7 +111,7 @@
                  'position': [ pr[0] + center[0],
                                pr[1] + center[1],
                                pr[2] + center[2] ] };
-      }).sort(function(a,b) { return a['position'][2] - b['position'][2]});
+      }).sort(function(a,b) { return b['position'][2] - a['position'][2]});
   }
 
   function render() {
@@ -127,11 +127,10 @@
     let context = canvas.getContext('2d');    
 
     let rdata = rotateData(gdata);
+    
     rdata.forEach(function(injection, index) {                  
       let p = injection['position'];
       
-      let ci = Math.floor(p[2] / 12000.0 * 255.0);      
-
       context.beginPath();
       context.arc(p[0] * 0.03+50, p[1] * 0.03+50, 
                   10.0 * Math.sqrt(injection['data']['ATTR(Injection Volume)']),
