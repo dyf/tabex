@@ -2,9 +2,22 @@
 
 // Wrap everything in an anonymous function to avoid polluting the global namespace
 (function () {
-  let drifting = false;
-  let gdata = null;
+
+  // all the hard-coded stuff
+  let drifting = false;  
   let gquat = null;  
+  let gdata = null;
+
+  let gXField = 'ATTR(Injection X)';
+  let gYField = 'ATTR(Injection Y)';
+  let gZField = 'ATTR(Injection Z)';
+  let gColorField = "Injection Rgb Triplet";
+  let gSizeField = 'ATTR(Injection Volume)';
+  let gCenter = [ 13200.0 * 0.5, 8000.0*0.5, 11400.0*0.5 ];
+
+  function markColor(c) { return "rgb(" + c.slice(1,-1) + ")" }
+  function markSize(s) { return 10.0 * Math.sqrt(s); }
+  function markPosition(p) { return [p[0] * 0.03+50, p[1] * 0.03+50]; }
 
   $(document).ready(function () {
     tableau.extensions.initializeAsync().then(function() {
@@ -85,7 +98,7 @@
       const worksheetData = sumdata;
 
       // transpose the data
-      let objs = worksheetData.data.map(function(item) {        
+      gdata = worksheetData.data.map(function(item) {        
         
         let out = {}        
         worksheetData.columns.forEach(function(col, index) {
@@ -94,19 +107,16 @@
         });
         return out;
       });
-
-      gdata = objs;
+      
       render();
     });
   };
 
-  function rotateData(data) {
-      let center = [ 13200.0 * 0.5, 8000.0*0.5, 11400.0*0.5];
-
-      return gdata.map(function(d) {        
-        let pr = gquat.rotateVector([ d['ATTR(Injection X)']-center[0], 
-                                      d['ATTR(Injection Y)']-center[1], 
-                                      d['ATTR(Injection Z)']-center[2] ]);
+  function rotateAndDepthSortData(data, xField, yField, zField, center) {
+      return data.map(function(d) {        
+        let pr = gquat.rotateVector([ d[xField]-center[0], 
+                                      d[yField]-center[1], 
+                                      d[zField]-center[2] ]);
         return { 'data': d,
                  'position': [ pr[0] + center[0],
                                pr[1] + center[1],
@@ -126,16 +136,16 @@
     
     let context = canvas.getContext('2d');    
 
-    let rdata = rotateData(gdata);
+    let rdata = rotateAndDepthSortData(gdata, gXField, gYField, gZField, gCenter);
     
     rdata.forEach(function(injection, index) {                  
-      let p = injection['position'];
+      let p = markPosition(injection['position']);
       
       context.beginPath();
-      context.arc(p[0] * 0.03+50, p[1] * 0.03+50, 
-                  10.0 * Math.sqrt(injection['data']['ATTR(Injection Volume)']),
+      context.arc(p[0], p[1],
+                  markSize(injection['data'][gSizeField]),
                   0, 2.0 * Math.PI);                        
-      context.fillStyle = "rgb(" + injection['data']["Injection Rgb Triplet"].slice(1,-1) + ")";
+      context.fillStyle = markColor(injection['data'][gColorField]);
       context.fill();
     });
     
